@@ -1,0 +1,21 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+flask = "*"
+argparse = "*"
+marshmallow = "*"
+natsort = "*"
+pyjwt = "*"
+waitress = "*"
+jsonschema = "==3.0.2"
+flask-sqlalchemy = "*"
+requests = {extras = ["socks"], version = "*"}
+flask-cors = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.8"
