@@ -1,19 +1,29 @@
-from crypt import methods
-import jwt
-from http import HTTPStatus
 from flask import Blueprint, jsonify, request, current_app
+from api.model.user import User
 from api.schema.user import UserSchema
-from api.integrations.rmrail_1c import get_user_by_card_code
-from api.jwt.fetch_token import fetch_token
-from api.jwt.make_token import make_token
-from definitions import ROOT_DIR
-from datetime import datetime, timedelta
+from api.middleware.fetch_json import fetch_json
+from api.middleware.json_api import JSON_API
 
-session_api = Blueprint('session', __name__)
 
-#TODO: дописать!!!
-#POST - создаёт новую сессию, PUT - продлевает, DELETE - завершает
+user_api = Blueprint('user', __name__)
+json_api = JSON_API(User, UserSchema)
 
-@session_api.route('/api/user', methods=['GET'])
-def auth_user():
+
+@user_api.route('/entity/user', methods=['GET'])
+def get_users():
+    result = User.query.all()
+    if (result):
+        dump = UserSchema().dump(result, many=True)
+        return jsonify(dump)
+    else:
+        return jsonify({
+                    'error' : 'Нет пользователей'
+            }), 404
+
+
+@user_api.route('/entity/user', methods=['POST'])
+@fetch_json
+@json_api.post
+@json_api.return_schema
+def post_user(*args, **kwargs):
     pass

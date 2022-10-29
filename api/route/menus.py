@@ -1,13 +1,11 @@
 import os
 from http import HTTPStatus
 from flask import Blueprint, jsonify, request, current_app
-from api.schema.menus import MenuSchema
+from api.model.user import User
 from definitions import ROOT_DIR
-from api.middleware.check_admin import check_admin
 from api.middleware.fetch_json import fetch_json
 from api.middleware.json_api import JSON_API
 from api.schema.menus import MenuSchema
-from api.model.menus import Menu
 import uuid
 
 
@@ -48,7 +46,7 @@ def get_menus_list():
 @check_admin
 @fetch_json
 @json_api.post
-@json_api.return_model
+@json_api.return_schema
 def post_menu(*args, **kwargs):
     pass
 
@@ -57,7 +55,7 @@ def post_menu(*args, **kwargs):
 @check_admin
 @fetch_json
 @json_api.post_by_uuid
-@json_api.return_model
+@json_api.return_schema
 def place_menu(*args, **kwargs):
     pass
 
@@ -65,7 +63,7 @@ def place_menu(*args, **kwargs):
 @menus_api.route('/api/menus-list/<uuid>', methods=['DELETE'])
 @check_admin
 @json_api.delete_by_uuid
-@json_api.return_model
+@json_api.return_schema
 def delete_news_by_uuid(*args, **kwargs):
     pass
 
@@ -74,6 +72,6 @@ def delete_news_by_uuid(*args, **kwargs):
 @check_admin
 @fetch_json
 @json_api.put_by_uuid
-@json_api.return_model
+@json_api.return_schema
 def put_news_by_uuid(*args, **kwargs):
     pass

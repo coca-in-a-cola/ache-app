@@ -3,7 +3,6 @@
 app_secrets.py
 Pipfile.lock
 db
-spa
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

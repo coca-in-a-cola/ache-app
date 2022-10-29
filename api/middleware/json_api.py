@@ -14,13 +14,13 @@ class JSON_API:
         try:
             schema = self.Schema().load(data, many=many, partial=True)
             model = self.Model(**schema)
-        except:
-            raise Exception(f'Невозможно создать модель типа {self.Model.__class__.__name__}')
+        except Exception as ex:
+            raise Exception(f'Невозможно создать модель типа {self.Model.__class__.__name__}: {ex}')
         
         return model
 
 
-    def return_model(self, f):
+    def return_schema(self, f):
         @functools.wraps(f)
         def decorated(*args, model, **kwargs):
             try:
@@ -29,6 +29,13 @@ class JSON_API:
                 return f(*args, model=model, **kwargs)
             return jsonify(schema), 200
         return decorated
+
+    
+    def get_model(self, schema):
+        #try:
+            #result = self.Model.query.get(schema['uuid'])
+        pass
+
 
 
     def query_model(self, data, many=False):
@@ -87,7 +94,7 @@ class JSON_API:
 
     def post(self, f):
         @functools.wraps(f)
-        def decorated(*args, data:dict, **kwargs):
+        def decorated(*args, data:dict, **kwargs):            
             try:
                 model = self.create_model(data)
                 current_app.db.session.add(model)

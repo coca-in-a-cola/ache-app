@@ -1,0 +1,15 @@
+@font-face {
+    font-family: 'Arial-Mt';
+    src: local('Arial-Mt'), url(../fonts/Arial-MT.ttf) format('truetype');
+    font-weight: normal;
+}
+
+@font-face {
+    font-family: 'Arial-Mt';
+    src: local('Arial-BoldMT'), url(../fonts/Arial-BoldMT.ttf) format('truetype');
+    font-weight: 900;
+}
+
+body {
+    font-family: 'Arial-Mt';
+}

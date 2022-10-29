@@ -1,0 +1,68 @@
+.hg-theme-default {
+    position: absolute;
+    bottom: 0;
+    font-weight: bold;
+    font-size: x-large;
+}
+
+.hg-theme-default.keyboard-relative {
+    position: relative;
+}
+
+.hg-theme-default .hg-button {
+    height: 60px;
+    max-width: 120px;
+    min-width: 120px;
+}
+
+.hg-theme-default .hg-row {
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.hg-theme-default .hg-rows {
+    padding-top: 40px;
+    padding-bottom: 20px;
+}
+
+.hg-theme-default.react-simple-keyboard::before {
+    display: block;
+    position: absolute;
+    left: 0;
+    right: 0;
+    /* margin-left: -10px; */
+    top: 0;
+    width: 100%;
+    background-color: rgb(107 114 128);
+    height: 20px;
+    content: " ";
+}
+
+@keyframes animate-bottom {
+    0% { transform: translateY(100%) }
+    100% { transform: translateY(0) }
+}
+
+.hg-theme-default.react-simple-keyboard{
+    animation: animate-bottom .5s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.hg-theme-default.keyboard-full .hg-button{
+    height: 60px;
+    max-width: 60px;
+    min-width: 60px;
+}
+
+.hg-theme-default.keyboard-full .hg-button-lg{
+    height: 60px;
+    max-width: 125px;
+    min-width: 125px;
+}
+
+.hg-theme-default.keyboard-full .hg-button-xl{
+    height: 60px;
+    min-width: 710px;
+}
