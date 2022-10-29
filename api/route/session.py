@@ -4,7 +4,7 @@ from http import HTTPStatus
 from flask import Blueprint, jsonify, request, current_app
 from api.middleware.fetch_json import fetch_json
 from api.schema.user import UserSchema
-from api.middleware.jwt_auth import fetch_token, auth_user, confirm_number, prolong
+from api.middleware.jwt import fetch_token, sign_in, confirm_number, prolong
 
 session_api = Blueprint('session', __name__)
 
@@ -12,8 +12,8 @@ session_api = Blueprint('session', __name__)
 
 @session_api.route('/api/session', methods=['POST'])
 @fetch_json
-@auth_user
-def auth_user():
+@sign_in
+def sign_in():
     pass
 
 
