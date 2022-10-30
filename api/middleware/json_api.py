@@ -1,6 +1,7 @@
 import functools
 from flask import current_app, request, jsonify
 from api.model.declarative_base import db
+from api.schema.meta import selectUUID
 
 class JSON_API:
 
@@ -32,10 +33,29 @@ class JSON_API:
 
     
     def get_model(self, schema):
-        #try:
-            #result = self.Model.query.get(schema['uuid'])
-        pass
+        try:
+            result = self.Model.query.get(selectUUID(schema))
+            return result
+        except Exception as ex:
+            return None
 
+
+    def get_model_by_uuid(self, f):
+        """
+            Возвращает сущность по uuid
+            Является конечной точкой
+        """
+        @functools.wraps(f)
+        def decorated(*args, uuid, **kwargs):
+            try:
+                result = self.Model.query.get(uuid)
+                return f(*args, model=result, **kwargs)
+            except:
+                return jsonify({
+                        'error' : f'Не найдено {self.Model.__tablename__} с uuid {uuid}'
+                }), 404
+
+        return decorated
 
 
     def query_model(self, data, many=False):
@@ -129,11 +149,10 @@ class JSON_API:
         return decorated
 
 
-    def delete_by_uuid(self, f):
+    def delete_model(self, f):
         @functools.wraps(f)
-        def decorated(*args, uuid, **kwargs):
+        def decorated(*args, model, **kwargs):
             try:
-                model = self.Model.query.get(uuid)
                 current_app.db.session.delete(model)
                 current_app.db.session.commit()
             except Exception as ex:

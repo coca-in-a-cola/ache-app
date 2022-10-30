@@ -4,7 +4,7 @@ from functools import wraps
 import jwt
 from api.model.user import User
 from api.schema.user import UserSchema
-from api.schema.meta import selectMetaSchemaUUID
+from api.schema.meta import selectUUID
 
 from datetime import datetime, timedelta
 
@@ -32,7 +32,7 @@ def fetch_user_from_token(f):
         # or request body as authToken
         if not token:
             try:
-                token = request.get_json()['authToken']
+                token = request.get_json()['x-access-token']
             except:
                 return jsonify({'error' : 'Токен не найден!'}), 401
   
@@ -50,7 +50,7 @@ def fetch_user_from_token(f):
             }), 401
 
         try:
-            user = User.query.get(selectMetaSchemaUUID(data['user']))
+            user = User.query.get(selectUUID(data['user']))
         except Exception as ex:
             return jsonify({
                 'error' : f'Пользователь не найден: {ex}'
@@ -73,34 +73,49 @@ def sign_in(f):
             user = User.query.filter(User.auth_key_id == data['auth_key_id'])
             if (len(user)):
                 user = user[0]
-                response.headers['x-access-token'] = make_token(user)
-                pass
+                token = make_token(user)
+                response.headers['x-access-token'] = token
+                return jsonify(
+                    {
+                        'x-access-token': token,
+                        'expires': current_app.config['SESSION_TIME_IN_SECONDS']
+                    }
+                ), 200
             else:
                 
                 return jsonify({
                     'error' : 'Пользователь не найден'
                 }), 201
-            
-            confirm_number = generate_confirm_numer(5)
+    return decorated
 
-            #при работающем GSM-шлюзе, отправлять сообщения в ответе
-            if (current_app.config["GSM_ENABLED"]):
-                try:
-                    send(user["phone_number"], f"{confirm_number} - ваш код подтверждения")
-                except Exception as ex:
-                    pass
-                    return jsonify({
-                        'error' : 'На данный момент GSM-шлюз не работает. Приносим извинения за предоставленные неудобства.'
-                    }), 500 
 
-            # Всё получилось
-            return make_session(user, False, confirm_number, ["phone_number"])
-            
-        else:
-            return jsonify({
-                'error' : 'должен содержать поле ssid с кодом пропуска сотрудника'
-            }), 400
-            
+def sign_up(f):
+    """
+    Декоратор регистрирует нового пользователя в системе
+    После него уже не могут идти какие-либо декораторы
+    """
+
+    @wraps(f)
+    def decorated(*args, data, **kwargs):
+        schema = UserSchema.load(data)
+        model = User.query.get(selectUUID(schema))
+        if ('auth_key_id' in data):
+            user = User.query.filter(User.auth_key_id == data['auth_key_id'])
+            if (len(user)):
+                user = user[0]
+                token = make_token(user)
+                response.headers['x-access-token'] = token
+                return jsonify(
+                    {
+                        'x-access-token': token,
+                        'expires': current_app.config['SESSION_TIME_IN_SECONDS']
+                    }
+                ), 200
+            else:
+                
+                return jsonify({
+                    'error' : 'Пользователь не найден'
+                }), 201
     return decorated
 
 

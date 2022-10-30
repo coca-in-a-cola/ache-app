@@ -1,27 +1,27 @@
 from flask import Blueprint, jsonify, request, current_app
-from api.model.user import User
-from api.schema.user import UserSchema
+from api.model.event import Event
+from api.schema.event import EventSchema
 from api.middleware.fetch_json import fetch_json
 from api.middleware.json_api import JSON_API
 
 
-user_api = Blueprint('user', __name__)
-json_api = JSON_API(User, UserSchema)
+event_api = Blueprint('event', __name__)
+json_api = JSON_API(Event, EventSchema)
 
 
-@user_api.route('/entity/user', methods=['GET'])
+@event_api.route('/entity/event', methods=['GET'])
 def get_users():
-    result = User.query.all()
+    result = Event.query.all()
     if (result):
-        dump = UserSchema().dump(result, many=True)
+        dump = EventSchema().dump(result, many=True)
         return jsonify(dump)
     else:
         return jsonify({
-                    'error' : 'Нет пользователей'
+                    'error' : 'Нет событий'
             }), 404
 
 
-@user_api.route('/entity/user/<uuid>', methods=['GET'])
+@event_api.route('/entity/event/<uuid>', methods=['GET'])
 @json_api.get_model_by_uuid
 @json_api.return_schema
 def get_user():
@@ -29,7 +29,7 @@ def get_user():
 
 
 
-@user_api.route('/entity/user', methods=['POST'])
+@event_api.route('/entity/event', methods=['POST'])
 @fetch_json
 @json_api.post
 @json_api.return_schema
@@ -37,7 +37,7 @@ def post_user(*args, **kwargs):
     pass
 
 
-@user_api.route('/entity/user/<uuid>', methods=['DELETE'])
+@event_api.route('/entity/event/<uuid>', methods=['DELETE'])
 @json_api.get_model_by_uuid
 @json_api.delete_model
 @json_api.return_schema

@@ -1,0 +1,69 @@
+from flask import Flask, request
+from api.model.declarative_base import db
+import uuid as _uuid
+from api.schema.meta import MetaSchema, selectUUID
+
+def get_meta(metaSchema: MetaSchema):
+    try:
+        metaSchema = metaSchema.load(metaSchema)
+    except Exception as ex:
+        raise("Неверно указаны метаданные: " + ex)
+    
+    return Meta.query.get(selectUUID(metaSchema))
+
+
+meta_to_meta = db.Table(
+    "meta_to_meta",
+    db.metadata,
+    db.Column("left_meta_uuid", db.String, db.ForeignKey("meta.uuid"), primary_key=True),
+    db.Column("right_meta_uuid", db.String, db.ForeignKey("meta.uuid"), primary_key=True),
+    db.Column("fieldname", db.String)
+)
+
+
+class MetaData(db.Model):
+    __tablename__ = 'metaData'
+
+    uuid = db.Column(db.ForeignKey("meta.uuid"), primary_key=True, index=True)
+    type = db.Column(db.String(50))
+    metaHref = db.Column(db.String)
+
+    # many-to-one scalar
+    # parent = db.relationship("Meta", back_populates="metaData")
+
+    def __init__(self, uuid = None, type = None, **kwargs):
+        self.uuid = uuid
+        self.type = type
+        self.metaHref = f"{request.host_url}{type}/{uuid}"
+        super().__init__(**kwargs)
+
+
+class Meta(db.Model):
+    __tablename__ = 'meta'
+    
+    uuid = db.Column(db.String, primary_key=True, index=True)
+    type = db.Column(db.String(50))
+
+    meta = db.relationship("MetaData", uselist=False, cascade = "all, delete, delete-orphan")
+
+    __mapper_args__ = {
+        'polymorphic_identity':'meta',
+        'polymorphic_on': type
+    }
+
+    bound_metas = db.relationship(
+        "Meta",
+        secondary=meta_to_meta,
+        primaryjoin=id == meta_to_meta.c.left_meta_uuid,
+        secondaryjoin=id == meta_to_meta.c.right_meta_uuid,
+    )
+
+
+    def __init__(self, uuid = None, **kwargs):
+        if not uuid:
+            # Нельзя генерировать UUID в шапке (...) функции, т.к. получится фиксированное значение
+            uuid = str(_uuid.uuid4().hex)
+        
+        self.meta = MetaData(uuid=uuid, type=self.type)
+
+        super().__init__(uuid = uuid, **kwargs)

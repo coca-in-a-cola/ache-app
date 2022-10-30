@@ -1,7 +1,6 @@
 from flask import Flask
 from argparse import ArgumentParser
 from route import spa
-from api.route.user import user_api
 from waitress import serve
 import app_secrets
 import app_config
@@ -15,7 +14,11 @@ def create_app():
     app.url_map.strict_slashes = False
 
     # registering blueprints
+    from api.route.user import user_api
+    from api.route.event import event_api
+
     app.register_blueprint(user_api)
+    app.register_blueprint(event_api)
     # Держите его последним
     app.register_blueprint(spa)
 
