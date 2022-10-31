@@ -3,7 +3,7 @@ from api.model.event import Event
 from api.schema.event import EventSchema
 from api.middleware.fetch_json import fetch_json
 from api.middleware.json_api import JSON_API
-
+from api.middleware.is_admin import check_admin
 
 event_api = Blueprint('event', __name__)
 json_api = JSON_API(Event, EventSchema)
@@ -30,6 +30,7 @@ def get_user():
 
 
 @event_api.route('/entity/event', methods=['POST'])
+@check_admin
 @fetch_json
 @json_api.post
 @json_api.return_schema
@@ -38,6 +39,7 @@ def post_user(*args, **kwargs):
 
 
 @event_api.route('/entity/event/<uuid>', methods=['DELETE'])
+@check_admin
 @json_api.get_model_by_uuid
 @json_api.delete_model
 @json_api.return_schema

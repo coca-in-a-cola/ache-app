@@ -8,7 +8,7 @@ class BusyTime(db.Model):
     userUUID = db.Column(db.String, db.ForeignKey('meta.uuid'), primary_key = True)
     start = db.Column(db.DateTime(), primary_key = True)
     end = db.Column(db.DateTime(), primary_key = True)
-
+    
     __mapper_args__ = {
         'polymorphic_identity':'entity/busytime',
     }
@@ -29,6 +29,9 @@ class User(Meta):
     firstName = db.Column(db.String)
     middleName = db.Column(db.String)
     lastName = db.Column(db.String)
+    
+    events = db.relationship("EventUser",
+         lazy='dynamic', foreign_keys="EventUser.userUUID")
 
     busyTime = db.relationship("BusyTime",
          lazy='dynamic', cascade = "all, delete, delete-orphan")

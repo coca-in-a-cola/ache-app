@@ -16,9 +16,10 @@ def create_app():
     # registering blueprints
     from api.route.user import user_api
     from api.route.event import event_api
-
+    from api.route.session import session_api
     app.register_blueprint(user_api)
     app.register_blueprint(event_api)
+    app.register_blueprint(session_api)
     # Держите его последним
     app.register_blueprint(spa)
 

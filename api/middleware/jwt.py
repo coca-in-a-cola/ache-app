@@ -1,9 +1,10 @@
 from click import confirm
-from flask import current_app, request, jsonify, response
+from flask import current_app, request, jsonify, Response
 from functools import wraps
 import jwt
-from api.model.user import User
+from api.model.user import User, BusyTime
 from api.schema.user import UserSchema
+from api.schema.timeDelta import TimeDeltaPrivateSchema
 from api.schema.meta import selectUUID
 
 from datetime import datetime, timedelta
@@ -14,7 +15,7 @@ def make_token(user : User):
     функция создаёт токен сессии для пользователя
     """
     return jwt.encode(dict(
-            user = UserSchema.dump(user),
+            user = UserSchema().dump(user),
             expires = datetime.isoformat(datetime.utcnow() + timedelta(seconds = current_app.config['SESSION_TIME_IN_SECONDS'])),
     ), current_app.config['SECRET_KEY'], algorithm="HS256")
     
@@ -61,6 +62,70 @@ def fetch_user_from_token(f):
     return decorated
 
 
+def return_current_user(f):
+    """
+    Декоратор возвращает данные пользователя по токену
+    После него уже не могут идти какие-либо декораторы
+    """
+
+    @wraps(f)
+    def decorated(*args, user, **kwargs):
+        try:
+            return jsonify(UserSchema().dump(user)), 200
+        except Exception as ex:
+            return jsonify({
+                'error' : f'Ошибка личного кабинета: {ex}'
+            }), 400
+    return decorated
+
+
+def add_bisy_time(f):
+    """
+    Обновляет данные пользователя по времени занятости
+    """
+
+    @wraps(f)
+    def decorated(*args, user, data, **kwargs):
+        try:
+            schema = TimeDeltaPrivateSchema().load(data, partial=True)
+            model = BusyTime(userUUID = user.uuid, **schema)
+            user.busyTime.append(model)
+            current_app.db.session.add(model)
+            current_app.db.session.commit()
+
+        except Exception as ex:
+            current_app.db.session.rollback()
+            return jsonify({
+                'error' : f'Ошибка добавления времени {ex}'
+            }), 400
+
+        return f(*args, user=user, model = user, **kwargs)
+    return decorated
+
+
+def delete_bisy_time(f):
+    """
+    Удаляет данные пользователя по времени занятости
+    """
+
+    @wraps(f)
+    def decorated(*args, user, data, **kwargs):
+        try:
+            schema = TimeDeltaPrivateSchema().load(data)
+            model = BusyTime.query.get((user.uuid, schema['start'], schema['end']))
+            current_app.db.session.delete(model)
+            current_app.db.session.commit()
+
+        except Exception as ex:
+            current_app.db.session.rollback()
+            return jsonify({
+                'error' : f'Ошибка удаления времени {ex}'
+            }), 400
+
+        return f(*args, user=user, model = user, **kwargs)
+    return decorated
+
+
 def sign_in(f):
     """
     Декоратор авторизует пользователя в системе и выдаёт ему токен
@@ -70,22 +135,23 @@ def sign_in(f):
     @wraps(f)
     def decorated(*args, data, **kwargs):
         if ('auth_key_id' in data):
-            user = User.query.filter(User.auth_key_id == data['auth_key_id'])
+            user = User.query.filter(User.auth_key_id == data['auth_key_id']).all()
             if (len(user)):
                 user = user[0]
                 token = make_token(user)
-                response.headers['x-access-token'] = token
-                return jsonify(
+                resp = jsonify(
                     {
                         'x-access-token': token,
                         'expires': current_app.config['SESSION_TIME_IN_SECONDS']
                     }
-                ), 200
+                )
+                resp.headers['x-access-token'] = token
+                return resp, 200
             else:
                 
                 return jsonify({
                     'error' : 'Пользователь не найден'
-                }), 201
+                }), 404
     return decorated
 
 
@@ -97,39 +163,25 @@ def sign_up(f):
 
     @wraps(f)
     def decorated(*args, data, **kwargs):
-        schema = UserSchema.load(data)
-        model = User.query.get(selectUUID(schema))
-        if ('auth_key_id' in data):
-            user = User.query.filter(User.auth_key_id == data['auth_key_id'])
-            if (len(user)):
-                user = user[0]
-                token = make_token(user)
-                response.headers['x-access-token'] = token
-                return jsonify(
-                    {
-                        'x-access-token': token,
-                        'expires': current_app.config['SESSION_TIME_IN_SECONDS']
-                    }
-                ), 200
-            else:
-                
-                return jsonify({
-                    'error' : 'Пользователь не найден'
-                }), 201
-    return decorated
+        user = User.query.filter(User.auth_key_id == data['auth_key_id']).all()
+        if len(user):
+            return jsonify({
+                    'error' : 'Пользователь уже зарегистрирован для данного ТГ-аккаунта'
+                }), 403
 
+        try:        
+            schema = UserSchema().load(data, partial=True)
+            model = User(**schema)
+            current_app.db.session.add(model)
+            current_app.db.session.commit()
 
-"""
-    Декоратор продления сессии
-    После него уже не могут идти какие-либо декораторы
-"""
-def prolong(f):
-    @wraps(f)
-    def decorated(*args, token, **kwargs):
-        if (token and token["confirmed"]):
-            make_session(token['user_info'], token["confirmed"], token["confirm_number"])
+            return jsonify({
+                'success': True,
+            }), 200
+        except Exception as ex:
+            current_app.db.session.rollback()
+            return jsonify({
+                    'error' : 'Ошибка регистрации пользователя'
+                }), 400
 
-        return jsonify({
-                'error' : 'Сессия не найдена'
-        }), 400
     return decorated
